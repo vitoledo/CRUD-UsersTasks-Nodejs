@@ -64,7 +64,7 @@ app.get('/users/:id', (req, res) => {
         return res.status(400).json({ error: 'Usuário inexistente!' });
     }
 
-    res.json(user)
+    res.json(user);
 });
 
 //PUT
@@ -73,6 +73,7 @@ app.put('/users/:id', (req, res) => {
         const data = userSchema.parse(req.body);
         const { id } = req.params;
         const user = users.find(u => u.id === id);
+        const userIndex = users.findIndex(u => u.id === id);
 
         if (!user) {
             return res.status(400).json({ error: 'Usuário inexistente!' });
@@ -82,8 +83,6 @@ app.put('/users/:id', (req, res) => {
         if (emailExist) {
             return res.status(400).json({ error: 'Email já cadastrado!' });
         }
-
-        const userIndex = users.findIndex(u => u.id === id);
 
         const updateUser = {
             ...users[userIndex],
@@ -113,6 +112,95 @@ app.delete('/users/:id', (req, res) => {
         users.splice(userIndex, 1);
 
         res.status(201).json({ message: 'Usuário deletado!' });
+
+    } catch (err) {
+        res.status(400).json({ error: err.errors });
+    }
+});
+
+
+//TasksRoutes
+
+//POST
+app.post('/tasks', (req, res) => {
+    try {
+        const data = taskSchema.parse(req.body);
+
+        const userExists = users.some(t => t.id === data.userId);
+        const userStatus = users.find(t => t.id === data.userId);
+
+        if (userExists) {
+            if (userStatus === 'ativo') {
+                const newTask = {
+                    id: randomUUID(),
+                    ...data,
+                    createDate: new Date(),
+                    updateDate: new Date(),
+                };
+
+                tasks.push(newTask);
+                res.status(201).json(newTask);
+            } else {
+                return res.status(400).json({ error: 'Usuário inativo!' });
+            }
+        } else {
+            return res.status(400).json({ error: 'Usuário inexistente!' });
+        }
+
+    } catch (err) {
+        res.status(400).json({ error: err.errors });
+
+    }
+});
+
+//GET
+app.get('/tasks', (req, res) => {
+    res.json(tasks);
+});
+
+app.get('/tasks/:id', (req, res) => {
+    const { id } = req.params;
+    const task = tasks.find(t => t.id === id);
+
+    if (!task) {
+        return res.status(400).json({ error: 'Task inexistente!' });
+    }
+
+    res.json(task);
+});
+
+app.get('/tasks/:userId', (req, res) => {
+    const { userId } = req.params;
+    const task = tasks.find(t => t.userId === userId);
+
+    if (!task) {
+        return res.status(400).json({ error: 'Task inexistente!' });
+    }
+
+    res.json(task);
+});
+
+//PUT
+app.put('/tasks/:id', (req, res) => {
+    try {
+        const data = taskSchema.parse(req.body);
+        const { id } = req.params;
+        const task = tasks.find(t => t.id === id);
+        const taskIndex = tasks.findIndex(t => t.id === id);
+
+        if (!task) {
+            res.status(400).json({ error: 'Task inexistente!' });
+        }
+
+        const updateTasks = {
+            ...tasks[taskIndex],
+            ...data,
+            updateDate: new Date(),
+        }
+
+
+        tasks[taskIndex] = updateTasks;
+        res.status(201).json(updateTasks);
 
     } catch (err) {
         res.status(400).json({ error: err.errors });
