@@ -103,15 +103,31 @@ app.delete('/users/:id', (req, res) => {
     try {
         const { id } = req.params;
         const user = users.find(u => u.id === id);
+        const task = tasks.find(t => t.userId === id);
+        const userIndex = users.findIndex(u => u.id === id);
 
         if (!user) {
             return res.status(400).json({ error: 'Usuário inexistente!' });
         }
-        const userIndex = users.findIndex(u => u.id === id);
 
-        users.splice(userIndex, 1);
+        if (!task) {
+            users.splice(userIndex, 1);
 
-        res.status(201).json({ message: 'Usuário deletado!' });
+            res.status(201).json({ message: 'Usuário deletado e usuário não tinha tasks!' });
+        } else {
+            const taskIndex = tasks.findIndex(t => t.userId === id);
+
+            users.splice(userIndex, 1);
+
+            for (let i = tasks.length - 1; i >= 0; i--) {
+                if (tasks[i].userId === id) {
+                    tasks.splice([i], 1);
+                }
+
+            }
+
+            res.status(201).json({ message: 'Usuário e tasks deletados!' });
+        }
 
     } catch (err) {
         res.status(400).json({ error: err.errors });
@@ -126,11 +142,11 @@ app.post('/tasks', (req, res) => {
     try {
         const data = taskSchema.parse(req.body);
 
-        const userExists = users.some(t => t.id === data.userId);
-        const userStatus = users.find(t => t.id === data.userId);
+        const userExists = users.some(u => u.id === data.userId);
+        const userStatus = users.find(u => u.id === data.userId);
 
         if (userExists) {
-            if (userStatus === 'ativo') {
+            if (userStatus.status === 'ativo') {
                 const newTask = {
                     id: randomUUID(),
                     ...data,
@@ -169,7 +185,7 @@ app.get('/tasks/:id', (req, res) => {
     res.json(task);
 });
 
-app.get('/tasks/:userId', (req, res) => {
+app.get('/users/:userId/tasks', (req, res) => {
     const { userId } = req.params;
     const task = tasks.find(t => t.userId === userId);
 
@@ -177,7 +193,8 @@ app.get('/tasks/:userId', (req, res) => {
         return res.status(400).json({ error: 'Task inexistente!' });
     }
 
-    res.json(task);
+    const userTasks = tasks.filter(t => t.userId === userId);
+    res.json(userTasks);
 });
 
 //PUT
@@ -201,6 +218,26 @@ app.put('/tasks/:id', (req, res) => {
 
         tasks[taskIndex] = updateTasks;
         res.status(201).json(updateTasks);
+
+    } catch (err) {
+        res.status(400).json({ error: err.errors });
+    }
+});
+
+//DELETE
+app.delete('/tasks/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const task = tasks.find(t => t.id === id);
+
+        if (!task) {
+            return res.status(400).json({ error: 'Task inexistente!' });
+        }
+        const taskIndex = tasks.findIndex(t => t.id === id);
+
+        tasks.splice(taskIndex, 1);
+
+        res.status(201).json({ message: 'Task deletada!' });
 
     } catch (err) {
         res.status(400).json({ error: err.errors });
