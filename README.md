@@ -110,3 +110,28 @@ Você pode escolher entre:
 - Regras de negócio aplicadas corretamente
 - Funcionamento completo das rotas (testável via Postman ou Insomnia)
 - Documentação simples (README com instruções para rodar o projeto)
+
+---
+
+# Como utilizar o projeto
+
+## Pré-requisitos
+
+- Node.js (versão >= 18)
+- npm ou yarn
+
+## Instalando dependências
+
+No terminal, dentro da pasta do projeto, rode:
+
+```bash
+npm install
+```
+
+## Rodando a Aplicação
+
+No terminal, dentro da pasta do projeto, rode:
+
+```bash
+npm start
+```

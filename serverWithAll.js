@@ -1,3 +1,4 @@
+//primeiro servidor feito, comporta toda a aplicação em um único arquivo
 import express from 'express';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
@@ -29,8 +30,8 @@ const taskSchema = z.object({
 app.post('/users', (req, res) => {
     try {
         const data = userSchema.parse(req.body);
-
         const emailExist = users.some(u => u.email === data.email);
+        
         if (emailExist) {
             return res.status(400).json({ error: 'Email já cadastrado!' });
         }
@@ -141,26 +142,25 @@ app.delete('/users/:id', (req, res) => {
 app.post('/tasks', (req, res) => {
     try {
         const data = taskSchema.parse(req.body);
+        const user = users.find(u => u.id === data.userId);
 
-        const userExists = users.some(u => u.id === data.userId);
-        const userStatus = users.find(u => u.id === data.userId);
-
-        if (userExists) {
-            if (userStatus.status === 'ativo') {
-                const newTask = {
-                    id: randomUUID(),
-                    ...data,
-                    createDate: new Date(),
-                    updateDate: new Date(),
-                };
-
-                tasks.push(newTask);
-                res.status(201).json(newTask);
-            } else {
-                return res.status(400).json({ error: 'Usuário inativo!' });
-            }
-        } else {
+        if (user === undefined) {
             return res.status(400).json({ error: 'Usuário inexistente!' });
+        }
+
+        if (user.status === 'ativo') {
+            const newTask = {
+                id: randomUUID(),
+                ...data,
+                createDate: new Date(),
+                updateDate: new Date(),
+            };
+
+            tasks.push(newTask);
+            res.status(201).json(newTask);
+
+        } else {
+            return res.status(400).json({ error: 'Usuário inativo!' });
         }
 
     } catch (err) {
@@ -185,15 +185,14 @@ app.get('/tasks/:id', (req, res) => {
     res.json(task);
 });
 
-app.get('/users/:userId/tasks', (req, res) => {
+app.get('/tasks/user/:userId', (req, res) => {
     const { userId } = req.params;
-    const task = tasks.find(t => t.userId === userId);
+    const userTasks = tasks.filter(t => t.userId === userId);
 
-    if (!task) {
+    if (userTasks.length === 0) {
         return res.status(400).json({ error: 'Task inexistente!' });
     }
 
-    const userTasks = tasks.filter(t => t.userId === userId);
     res.json(userTasks);
 });
 
@@ -229,11 +228,11 @@ app.delete('/tasks/:id', (req, res) => {
     try {
         const { id } = req.params;
         const task = tasks.find(t => t.id === id);
+        const taskIndex = tasks.findIndex(t => t.id === id);
 
         if (!task) {
             return res.status(400).json({ error: 'Task inexistente!' });
         }
-        const taskIndex = tasks.findIndex(t => t.id === id);
 
         tasks.splice(taskIndex, 1);
 
